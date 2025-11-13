@@ -1,12 +1,3 @@
-# --- 1. CHARGEMENT DES BIBLIOTHÈQUES ---
-library(shiny)
-library(readxl)
-library(dplyr)
-library(AER)
-library(modelsummary)
-library(gt)
-
-
 data <- read_excel("C:/Users/RiL/Desktop/Prog/Qualité_institutions/data/processed/data.xlsx")
 data <- as.data.frame(data)
 View(data)
@@ -26,7 +17,6 @@ data = data %>% mutate(
   Latitude = as.numeric(Latitude)
 )
 
-# Log Mortalité (nom simple)
 data$log_mortality = log(data$mortality_est)
 
 # Ajout PIB 2019
@@ -44,10 +34,8 @@ gdp_2019 <- c(
   65548.07078, 7046.0, 11190.15319, 1206.798113
 )
 data = cbind(data, gdp_2019)
-# On utilise un nom simple
 data$log_gdp_ppp_2019 <- log(data$gdp_2019) 
 
-# Variables (AVEC CORRECTION abs(Latitude) et noms simples)
 data <- data %>%
   mutate(
     log_output_worker_2019 = log(output_worker_2019), 
@@ -56,7 +44,7 @@ data <- data %>%
   )
 
 View(data)
-# Dummies (avec nom simple)
+
 data$`asia_dummy` <- ifelse(data$former_colony %in% c("India", "Bangladesh", "Malaysia", "Sri Lanka", "Pakistan", "Vietnam", "Indonesia", "Singapore", "Hong Kong"), 1, 0)
 data$`africa_dummy` <- ifelse(data$former_colony %in% c("Algeria", "Angola", "Egypt", "Kenya", "Nigeria", "Ethiopia", "Ghana", "South Africa", "Sudan", "Tanzania", "Uganda", "Zaire", "Morocco", "Tunisia", "Senegal", "Mali", "Burkina Faso", "Cameroon", "Côte d'Ivoire", "Gabon", "Guinea", "Sierra Leone", "Togo", "Gambia", "Madagascar", "Niger", "Congo (Brazzaville)"), 1, 0)
 data$`neo_europes_dummy` <- ifelse(data$former_colony %in% c("USA", "Canada", "Australia", "New Zealand"), 1, 0)
@@ -67,10 +55,9 @@ base_sample_without_neo_europes <- subset(data, neo_europes_dummy == 0)
 base_sample_without_africa <- subset(data, africa_dummy == 0)
 
 
-# --- 3. EXÉCUTION DE TOUS LES MODÈLES (PRÉ-CALCUL) ---
-# --- Formules mises à jour avec les noms de variables propres ---
+# exécution des modèles
 
-# --- Panel C: OLS (Table 4, Panel C) ---
+# (Table 4, Panel C)
 ols_c1 <- lm(log_gdp_ppp_1995 ~ avg_prot_risk, data = data)
 ols_c2 <- lm(log_gdp_ppp_1995 ~ avg_prot_risk + norm_latitude, data = data)
 ols_c3 <- lm(log_gdp_ppp_1995 ~ avg_prot_risk, data = base_sample_without_neo_europes)
@@ -81,7 +68,7 @@ ols_c7 <- lm(log_gdp_ppp_1995 ~ avg_prot_risk + asia_dummy + africa_dummy + othe
 ols_c8 <- lm(log_gdp_ppp_1995 ~ avg_prot_risk + asia_dummy + africa_dummy + other_regions_dummy + norm_latitude, data = data)
 ols_c9 <- lm(log_output_worker_1995 ~ avg_prot_risk, data = data)
 
-# --- Panel B: First Stage (Table 4, Panel B) ---
+# (Table 4, Panel B)
 fs_b1 <- lm(avg_prot_risk ~ log_mortality, data = data)
 fs_b2 <- lm(avg_prot_risk ~ log_mortality + norm_latitude, data = data)
 fs_b3 <- lm(avg_prot_risk ~ log_mortality, data = base_sample_without_neo_europes)
@@ -92,7 +79,7 @@ fs_b7 <- lm(avg_prot_risk ~ log_mortality + asia_dummy + africa_dummy + other_re
 fs_b8 <- lm(avg_prot_risk ~ log_mortality + asia_dummy + africa_dummy + other_regions_dummy + norm_latitude, data = data)
 fs_b9 <- lm(avg_prot_risk ~ log_mortality, data = data)
 
-# --- Panel A: 2SLS (IV) (Table 4, Panel A) ---
+# (Table 4, Panel A)
 iv_a1 <- ivreg(log_gdp_ppp_1995 ~ avg_prot_risk | log_mortality, data = data)
 iv_a2 <- ivreg(log_gdp_ppp_1995 ~ avg_prot_risk + norm_latitude | log_mortality + norm_latitude, data = data)
 iv_a3 <- ivreg(log_gdp_ppp_1995 ~ avg_prot_risk | log_mortality, data = base_sample_without_neo_europes)
@@ -103,7 +90,6 @@ iv_a7 <- ivreg(log_gdp_ppp_1995 ~ avg_prot_risk + asia_dummy + africa_dummy + ot
 iv_a8 <- ivreg(log_gdp_ppp_1995 ~ avg_prot_risk + norm_latitude + asia_dummy + africa_dummy + other_regions_dummy | log_mortality + norm_latitude + asia_dummy + africa_dummy + other_regions_dummy, data = data)
 iv_a9 <- ivreg(log_output_worker_1995 ~ avg_prot_risk | log_mortality, data = data)
 
-# --- MODÈLES 2019 (Extension) ---
 # OLS 2019
 ols_2019_1 <- lm(log_gdp_ppp_2019 ~ avg_prot_risk, data = data)
 ols_2019_2 <- lm(log_gdp_ppp_2019 ~ avg_prot_risk + norm_latitude, data = data)
